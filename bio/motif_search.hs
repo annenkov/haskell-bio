@@ -1,10 +1,10 @@
 import Data.List
 import Control.Monad
 
-bruteforceMedian seqs k = filter f $ zip (map (total_dH seqs) $ words) words
-                          where totalDistances = (map (total_dH seqs) $ words)                                              
+bruteforceMedian seqs k = filter f $ zip totalDistances words
+                          where totalDistances = map (total_dH seqs) words
                                 words =  replicateM 2 dnaAlphabet
-                                f (n, k_mer) = n == minimum totalDistances
+                                f (n, _) = n == minimum totalDistances
 dnaAlphabet = "ACTG"
 
 -- Hamming distance
