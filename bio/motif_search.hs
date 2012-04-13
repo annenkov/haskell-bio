@@ -1,5 +1,6 @@
 import Data.List
 import Control.Monad
+import Test.QuickCheck
 
 bruteforceMedian seqs k = filter f $ zip totalDistances words
                           where totalDistances = map (total_dH seqs) words
@@ -19,3 +20,6 @@ total_dH seqs k_mer = sum $ map min_dH seqs
 -- all k-mers from sequence
 k_mers k seq = map (take k) $ take (n-k+1) $ tails seq
               where n = length seq
+
+rndNucleotide = do i<-choose (0,3)
+                   return (dnaAlphabet!!i)

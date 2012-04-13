@@ -1,4 +1,6 @@
 import Data.Char (digitToInt)
+import System.Random
+import Control.Monad.State
 
 asInt_fold [] = 0
 asInt_fold ['-'] = 0
@@ -27,3 +29,24 @@ myReverse [] = []
 myReverse (x:xs) = (myReverse xs) ++ [x]
 
 myReverse1 xs = foldl (flip (:)) [] xs
+
+type RandomState a = State StdGen a
+
+getRandom :: Random a => RandomState a
+getRandom =
+  get >>= \gen ->
+  let (val, gen') = random gen in
+  put gen' >>
+  return val
+
+rnd :: StdGen -> (Int, StdGen)
+rnd = random
+
+getTwoRandoms :: Random a => RandomState (a, a)
+getTwoRandoms = liftM2 (,) getRandom getRandom
+
+getTwoIntRnd :: RandomState (Int,Int)
+getTwoIntRnd = getTwoRandoms
+
+randoms' :: StdGen -> [Int]
+randoms' gen = let (value, newGen) = random gen in value:randoms' newGen
