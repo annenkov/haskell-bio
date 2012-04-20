@@ -1,10 +1,11 @@
 import Data.List
 import Control.Monad
-import Test.QuickCheck
+import Control.Monad.Random
+import Test.HUnit
 
-bruteforceMedian seqs k = filter f $ zip totalDistances words
+bruteforceMedian seqs k = map snd $ filter f $ zip totalDistances words
                           where totalDistances = map (total_dH seqs) words
-                                words =  replicateM 2 dnaAlphabet
+                                words =  replicateM k dnaAlphabet
                                 f (n, _) = n == minimum totalDistances
 dnaAlphabet = "ACTG"
 
@@ -21,5 +22,30 @@ total_dH seqs k_mer = sum $ map min_dH seqs
 k_mers k seq = map (take k) $ take (n-k+1) $ tails seq
               where n = length seq
 
-rndNucleotide = do i<-choose (0,3)
-                   return (dnaAlphabet!!i)
+
+-- Random sequences for testing --
+
+rndNucleotide :: Rand StdGen Char
+rndNucleotide = do i <- getRandomR (0,3)
+                   return $ dnaAlphabet!!i
+
+rndDNA n = sequence $ replicate n rndNucleotide
+
+-- generate m DNA sequences of length n
+rndSeqs m n = sequence $ replicate m $ rndDNA n
+
+implantMotif k_mer seq = do dna <- seq
+                            i <- getRandomR (0,length dna - length k_mer - 1)
+                            return $ take i dna ++ k_mer ++ drop i dna
+
+makeTestSeqs m n k_mer =  sequence $ replicate m $ implantMotif k_mer $ rndDNA n
+
+
+-- Tests --
+
+test1 = TestCase (assertEqual "Finding 4-mer:" [k_mer] (bruteforceMedian testData 4))
+        where k_mer = "AAAA"
+              testData = evalRand (makeTestSeqs 5 20 k_mer) (mkStdGen 1)
+
+-- run tests with "runTestTT tests"
+tests = TestList [test1]

@@ -48,5 +48,9 @@ getTwoRandoms = liftM2 (,) getRandom getRandom
 getTwoIntRnd :: RandomState (Int,Int)
 getTwoIntRnd = getTwoRandoms
 
+--intRnds :: Int -> RandomState [Int]
+--intRnds n = do xs <- replicate n getRandom
+--               return xs
+
 randoms' :: StdGen -> [Int]
 randoms' gen = let (value, newGen) = random gen in value:randoms' newGen
