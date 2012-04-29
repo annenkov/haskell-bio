@@ -2,6 +2,8 @@ import Data.List
 import Control.Monad
 import Control.Monad.Random
 import Test.HUnit
+import TreeUtils
+import Data.Tree
 
 -- Find motifs of length k in list of DNA sequences using "brute force" algorithm.
 -- Searching for minimum total distance between sequences and all 4^k k-mers
@@ -27,9 +29,18 @@ total_dH seqs k_mer = sum $ map min_dH seqs
 k_mers k seq = map (take k) $ take (n-k+1) $ tails seq
               where n = length seq
 
+-- Branch And Bound median string search
+
+nextLevel k prefix | length prefix < k      = (prefix, map (appendChar prefix) dnaAlphabet)
+                   | otherwise              = (prefix, [])
+                     where appendChar str c = str ++ [c]
+
+searchTree k = mapTree f $ unfoldTree (nextLevel k) ""
+               where f x = (x, total_dH sampleSeqs x)
+
+sampleSeqs = ["TGACCGGGAAACTGA", "TAGAAGAAAGGTTGG", "GTACACATTAGATAA"]
 
 -- Random sequences for testing --
-
 rndNucleotide :: Rand StdGen Char
 rndNucleotide = do i <- getRandomR (0,3)
                    return $ dnaAlphabet!!i
