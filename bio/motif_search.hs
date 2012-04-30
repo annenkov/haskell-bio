@@ -35,10 +35,32 @@ nextLevel k prefix | length prefix < k      = (prefix, map (appendChar prefix) d
                    | otherwise              = (prefix, [])
                      where appendChar str c = str ++ [c]
 
-searchTree k = mapTree f $ unfoldTree (nextLevel k) ""
-               where f x = (x, total_dH sampleSeqs x)
+sampleSeqs = ["TGACCGTGCAAAAAA", "TAGAAGAAAAAATGG", "AAAAAAATCATGACT"]
 
-sampleSeqs = ["TGACCGGGAAACTGA", "TAGAAGAAAGGTTGG", "GTACACATTAGATAA"]
+data TreeItem = Item {k_mer :: String,
+                      distance :: Int}
+                deriving (Show, Eq)
+
+instance Ord TreeItem where
+      compare i1 i2 = compare (distance i1) (distance i2)
+
+searchTree k = mapTree f $ unfoldTree (nextLevel k) ""
+               where f x = Item x (total_dH sampleSeqs x)
+
+
+firstStep tree k | null nextToLastVertices = Item "" 0
+                 | otherwise =  minimum $ map rootLabel $ subForest $
+                   head $ nextToLastVertices
+                      where nextToLastVertices | null vertices  = [] 
+                                               | otherwise =  dropWhile (null . subForest) $ head vertices 
+                                                 where vertices = drop (k-1) (levels' tree)
+
+bbMedianStringSample k acc seq  | distance minDist == 0 = seq
+                                | otherwise =  bbMedianStringSample k (prune (>= minDist) acc) (k_mer minDist)
+                                  where minDist = firstStep acc k
+
+bbMedianString k = bbMedianStringSample k sTree (k_mer (firstStep sTree k))
+                   where sTree = searchTree k
 
 -- Random sequences for testing --
 rndNucleotide :: Rand StdGen Char
