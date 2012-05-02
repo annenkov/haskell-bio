@@ -7,7 +7,7 @@ import Data.Tree
 
 -- Find motifs of length k in list of DNA sequences using "brute force" algorithm.
 -- Searching for minimum total distance between sequences and all 4^k k-mers
-bruteforceMedian seqs k = map snd $ filter f $ zip totalDistances words
+bruteforceMedianString seqs k = map snd $ filter f $ zip totalDistances words
                           where totalDistances = map (total_dH seqs) words
                                 words =  replicateM k dnaAlphabet
                                 f (n, _) = n == minimum totalDistances
@@ -29,13 +29,7 @@ total_dH seqs k_mer = sum $ map min_dH seqs
 k_mers k seq = map (take k) $ take (n-k+1) $ tails seq
               where n = length seq
 
--- Branch And Bound median string search
-
-nextLevel k prefix | length prefix < k      = (prefix, map (appendChar prefix) dnaAlphabet)
-                   | otherwise              = (prefix, [])
-                     where appendChar str c = str ++ [c]
-
-sampleSeqs = ["TGACCGTGCAAAAAA", "TAGAAGAAAAAATGG", "AAAAAAATCATGACT"]
+-- Branch-and-Bound median string search.
 
 data TreeItem = Item {k_mer :: String,
                       distance :: Int}
@@ -44,24 +38,32 @@ data TreeItem = Item {k_mer :: String,
 instance Ord TreeItem where
       compare i1 i2 = compare (distance i1) (distance i2)
 
+-- Find motifs of length k in list of DNA sequences using branch-and-bound algorithm.
+bbMedianString seqs k = improve k sTree
+                        where sTree = searchTree seqs k
+
+-- Improving search tree by pruning branches that begins in vertex 
+-- with distance greater then or equal to current minimum distance.
+improve k sTree | null $ availableVertices prunedTree k  = k_mer minItem
+                | otherwise = improve k prunedTree
+                  where minItem      = minimum $ map rootLabel nextVertices
+                        prunedTree   = prune (>= minItem) sTree
+                        nextVertices = availableVertices sTree k 
+
+-- Generating serch tree. Node is represented as TreeItem data type.
 searchTree seqs k = mapTree f $ unfoldTree (nextLevel k) ""
                     where f x = Item x (total_dH seqs x)
 
+-- Consequentially adding all character from dnaAlphabets to prefix.
+nextLevel k prefix | length prefix < k      = (prefix, map (appendChar prefix) dnaAlphabet)
+                   | otherwise              = (prefix, [])
+                     where appendChar str c = str ++ [c]
 
-step alts = minimum $ map rootLabel $ alts
-
+-- Find vertices with potential solution.
 availableVertices tree k | null nextToLastVertices = []
                          | otherwise = subForest $ head $ nextToLastVertices
                            where nextToLastVertices | null vertices  = [] 
-                                                    | otherwise =  dropWhile (null . subForest) $ head vertices 
+                                                    | otherwise      =  dropWhile (null . subForest) $ head vertices 
                                                       where vertices = drop (k-1) (levels' tree)
 
-improve k sTree seq  | null nextVertices = seq
-                     | otherwise  =  improve k (prune (>= minItem) sTree) (k_mer minItem)
-                                    where minItem = step nextVertices
-                                          nextVertices = availableVertices sTree k 
-
-
-bbMedianString seqs k = improve k sTree ""
-                        where sTree = searchTree seqs k
-
+sampleSeqs = ["TGACCGTGCCCTTGGA", "CCTTGGAAGAAAAAATGG", "AAACCTTGGACATGACT"]
