@@ -44,8 +44,8 @@ data TreeItem = Item {k_mer :: String,
 instance Ord TreeItem where
       compare i1 i2 = compare (distance i1) (distance i2)
 
-searchTree k = mapTree f $ unfoldTree (nextLevel k) ""
-               where f x = Item x (total_dH sampleSeqs x)
+searchTree seqs k = mapTree f $ unfoldTree (nextLevel k) ""
+                    where f x = Item x (total_dH seqs x)
 
 
 step alts = minimum $ map rootLabel $ alts
@@ -56,12 +56,12 @@ availableVertices tree k | null nextToLastVertices = []
                                                     | otherwise =  dropWhile (null . subForest) $ head vertices 
                                                       where vertices = drop (k-1) (levels' tree)
 
-bbMedianStringSample k sTree seq  | null nextVertices = seq
-                                  | otherwise  =  bbMedianStringSample k (prune (>= minItem) sTree) (k_mer minItem)
+improve k sTree seq  | null nextVertices = seq
+                     | otherwise  =  improve k (prune (>= minItem) sTree) (k_mer minItem)
                                     where minItem = step nextVertices
                                           nextVertices = availableVertices sTree k 
 
 
-bbMedianString k = bbMedianStringSample k sTree ""
-                   where sTree = searchTree k
+bbMedianString seqs k = improve k sTree ""
+                        where sTree = searchTree seqs k
 
