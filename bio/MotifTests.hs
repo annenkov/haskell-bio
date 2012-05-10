@@ -1,6 +1,8 @@
+module MotifTests where 
 import Control.Monad.Random
 import Test.HUnit
-import MotifSearch
+import MotifSearch (bruteforceMedianString, bbMedianString, dnaAlphabet)
+import System (getArgs)
 
 -- Random sequences for testing --
 rndNucleotide :: Rand StdGen Char
@@ -27,3 +29,8 @@ test1 = TestCase (assertEqual "Finding 4-mer:" [k_mer] (bruteforceMedianString t
 
 -- run tests with "runTestTT tests"
 tests = TestList [test1]
+
+main = do
+    [n, m, k_mer] <- getArgs
+    let testData = evalRand (makeTestSeqs (read m) (read n) k_mer) (mkStdGen 2)
+    putStrLn $ bbMedianString testData (length k_mer)

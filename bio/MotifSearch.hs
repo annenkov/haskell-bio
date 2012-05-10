@@ -4,6 +4,9 @@ import Control.Monad
 import Data.List
 import TreeUtils
 import Data.Tree
+import System (getArgs)
+import Bio.Sequence.Fasta
+import Bio.Sequence.SeqData
 
 -- Find motifs of length k in list of DNA sequences using "brute force" algorithm.
 -- Searching for minimum total distance between sequences and all 4^k k-mers
@@ -67,3 +70,13 @@ availableVertices tree k | null nextToLastVertices = []
                                                       where vertices = drop (k-1) (levels' tree)
 
 sampleSeqs = ["TGACCGTGCCCTTGGA", "CCTTGGAAGAAAAAATGG", "AAACCTTGGACATGACT"]
+
+main = do
+    args <- getArgs
+    case args of
+        [fileName, k] -> do
+           seqs <- readFasta fileName 
+           putStrLn $ bbMedianString (map (toStr . seqdata) seqs) (read k)
+        _  -> putStrLn "Wrong arguments count. Usage: MotifSearch <filename> <k-mer length>"    
+    
+    

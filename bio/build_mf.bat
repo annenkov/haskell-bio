@@ -1,0 +1,1 @@
+ghc -package bio -package haskell-platform --make -O2 -main-is MotifSearch MotifSearch.hs
