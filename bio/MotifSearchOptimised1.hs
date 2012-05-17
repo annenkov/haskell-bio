@@ -63,7 +63,12 @@ improve k sTree | null $ availableVertices prunedTree k  = k_mer minItem
 
 -- Generating serch tree. Node is represented as TreeItem data type.
 searchTree seqs k = mapTree f $ unfoldTree (nextLevel k) ""
-                    where f x = Item x (total_dH seqs x)
+                    where f x = Item x $ dist $ middleSplit x
+                                where dist (prefix, []) = total_dH seqs prefix 
+                                      dist (prefix, suffix) 
+                                          | length prefix + length suffix == k = total_dH seqs x
+                                          | otherwise = (total_dH seqs prefix) + (total_dH seqs suffix)
+                                      middleSplit x = splitAt ((k `div` 2)+1) x
 
 -- Consequentially adding all character from dnaAlphabets to prefix.
 nextLevel k prefix | length prefix < k      = (prefix, map (appendChar prefix) dnaAlphabet)
