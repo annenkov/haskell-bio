@@ -69,7 +69,7 @@ availableVertices tree k | null nextToLastVertices = []
                                                     | otherwise      =  dropWhile (null . subForest) $ head vertices 
                                                       where vertices = drop (k-1) (levels' tree)
 
-sampleSeqs = ["TGACCGTGCCCTTGGA", "CCTTGGAAGAAAAAATGG", "AAACCTTGGACATGACT"]
+sampleSeqs = ["TGACCGTGCCCTTGGA", "CCCTTGGAAGAAAAATGG", "AAACCTTGGACATGACT"]
 
 main = do
     args <- getArgs

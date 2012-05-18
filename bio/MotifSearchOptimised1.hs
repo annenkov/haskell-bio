@@ -43,7 +43,8 @@ k_mers1 k seq = drop (k-1) $ tails' seq []
 -- Branch-and-Bound median string search.
 
 data TreeItem = Item {k_mer :: String,
-                      distance :: Int}
+                      distance :: Int,
+                      prefixDist :: Int}
                 deriving (Show, Eq)
 
 instance Ord TreeItem where
@@ -62,18 +63,22 @@ improve k sTree | null $ availableVertices prunedTree k  = k_mer minItem
                         nextVertices = availableVertices sTree k 
 
 -- Generating serch tree. Node is represented as TreeItem data type.
-searchTree seqs k = mapTree f $ unfoldTree (nextLevel k) ""
-                    where f x = Item x $ dist $ middleSplit x
-                                where dist (prefix, []) = total_dH seqs prefix 
-                                      dist (prefix, suffix) 
-                                          | length prefix + length suffix == k = total_dH seqs x
-                                          | otherwise = (total_dH seqs prefix) + (total_dH seqs suffix)
-                                      middleSplit x = splitAt ((k `div` 2)+1) x
+searchTree seqs k = unfoldTree (nextLevel seqs k) $ Item "" 0 0
 
 -- Consequentially adding all character from dnaAlphabets to prefix.
-nextLevel k prefix | length prefix < k      = (prefix, map (appendChar prefix) dnaAlphabet)
-                   | otherwise              = (prefix, [])
+nextLevel seqs k vertex | level < k  = (vertex, map makeItem $ map (appendChar $ k_mer vertex) dnaAlphabet)
+                        | otherwise  = (vertex, [])
                      where appendChar str c = str ++ [c]
+                           makeItem x = Item x (dist $ splitAt middle x) (fixedDistance vertex)
+                                  where dist (prefix, []) = total_dH seqs prefix 
+                                        dist (prefix, suffix)
+                                            | level == k-1 = total_dH seqs x                                            
+                                            | otherwise = prefixDist vertex + (total_dH seqs suffix)
+                                        fixedDistance vertex
+                                            | level == middle = total_dH seqs $ k_mer vertex
+                                            | otherwise       = prefixDist vertex                               
+                           middle = k `div` 2
+                           level = length $ k_mer vertex
 
 -- Find vertices with potential solution.
 availableVertices tree k | null nextToLastVertices = []
@@ -82,7 +87,7 @@ availableVertices tree k | null nextToLastVertices = []
                                                     | otherwise      =  dropWhile (null . subForest) $ head vertices 
                                                       where vertices = drop (k-1) (levels' tree)
 
-sampleSeqs = ["TGACCGTGCCCTTGGA", "CCTTGGAAGAAAAAATGG", "AAACCTTGGACATGACT"]
+sampleSeqs = ["TGACCGTGCCCTTGGA", "CCCTTGGAAGAAAAATGG", "AAACCTTGGACATGACT"]
 
 main = do
     args <- getArgs
