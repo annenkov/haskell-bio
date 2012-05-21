@@ -65,6 +65,12 @@ improve k sTree | null $ availableVertices prunedTree k  = k_mer minItem
 -- Generating serch tree. Node is represented as TreeItem data type.
 searchTree seqs k = unfoldTree (nextLevel seqs k) $ Item "" 0 0
 
+makeItem _ [] = []
+makeItem prevItem (x:xs) = f x:makeItem (f x) xs 
+                           where f x | dist < (distance prevItem) = Item x dist dist
+                                     | otherwise = Item x (distance prevItem) dist
+                                     where dist = total_dH sampleSeqs x
+
 -- Consequentially adding all character from dnaAlphabets to prefix.
 nextLevel seqs k vertex | level < k  = (vertex, map makeItem $ map (appendChar $ k_mer vertex) dnaAlphabet)
                         | otherwise  = (vertex, [])
