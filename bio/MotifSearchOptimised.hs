@@ -25,7 +25,7 @@ dH1 seq1 seq2 = hamming' seq1 seq2 0
 
 -- Total Hamming Distance
 total_dH seqs k_mer = sum $ map min_dH seqs
-                      where min_dH seq = minimum $ map (dH1 k_mer) $ k_mers (B.length k_mer) seq
+                      where min_dH seq = minimum $ map (dH1 k_mer) $ k_mers1 (B.length k_mer) seq
 
 -- All k-mers from sequence
 -- For exapmle: 
@@ -34,6 +34,11 @@ total_dH seqs k_mer = sum $ map min_dH seqs
 k_mers :: Int -> B.ByteString -> [B.ByteString]
 k_mers k seq = map (B.take k) $ take (fromIntegral (n-k+1)) $ B.tails seq
                where n = B.length seq
+
+k_mers1 k seq = drop (k-1) $ tails' seq []
+                where tails' seq acc 
+                          | B.length seq == 0 = acc
+                          | otherwise = tails' (B.tail seq) $ (B.take k seq):acc
 
 -- Branch-and-Bound median string search.
 
