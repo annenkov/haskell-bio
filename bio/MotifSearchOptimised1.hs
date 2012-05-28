@@ -38,13 +38,12 @@ k_mers k seq = map (take k) $ take (n-k+1) $ tails seq
 k_mers1 k seq = drop (k-1) $ tails' seq []
                 where tails' []  acc = acc
                       tails' seq acc = tails' (tail seq) $ (take k seq):acc
-                      n = length seq
 
 -- Branch-and-Bound median string search.
 
-data TreeItem = Item {k_mer :: String,
-                      distance :: Int,
-                      prefixDist :: Int}
+data TreeItem = Item {k_mer      :: String,
+                      distance   :: Int,
+                      distances  :: [Int]}
                 deriving (Show, Eq)
 
 instance Ord TreeItem where
@@ -62,29 +61,32 @@ improve k sTree | null $ availableVertices prunedTree k  = k_mer minItem
                         prunedTree   = prune (>= minItem) sTree
                         nextVertices = availableVertices sTree k 
 
--- Generating serch tree. Node is represented as TreeItem data type.
-searchTree seqs k = unfoldTree (nextLevel seqs k) $ Item "" 0 0
+-- Generating search tree. Node is represented as TreeItem data type.
+searchTree seqs k = unfoldTree (nextLevel seqs k) $ Item "" 0 []
 
-makeItem _ [] = []
-makeItem prevItem (x:xs) = f x:makeItem (f x) xs 
-                           where f x | dist < (distance prevItem) = Item x dist dist
-                                     | otherwise = Item x (distance prevItem) dist
-                                     where dist = total_dH sampleSeqs x
+upperLevel seqs k_mers@(k_mer:ks) Item {distances=ds} = upperLevel' (Item k_mer dist (dist:ds)) k_mers
+                         where upperLevel' _ [] = []
+                               upperLevel' Item {distances=dsts@(d:ds1)} (x:xs) = f x:upperLevel' (f x) xs
+                                   where f x | dist < d   = Item x dist (dist:ds1)
+                                             | otherwise  = Item x dist dsts
+                                         dist = total_dH seqs x
+                               dist = total_dH seqs k_mer
+
 
 -- Consequentially adding all character from dnaAlphabets to prefix.
-nextLevel seqs k vertex | level < k  = (vertex, map makeItem $ map (appendChar $ k_mer vertex) dnaAlphabet)
+nextLevel seqs k vertex | level == k `div` 2 - 1 && even k = (vertex, map makeItem' $ map (appendChar $ k_mer vertex) dnaAlphabet)
+                        | level < k `div` 2 = (vertex, upperLevel seqs (map (appendChar $ k_mer vertex) dnaAlphabet) vertex)
+                        | level < k  = (vertex, map makeItem $ map (appendChar $ k_mer vertex) dnaAlphabet)
                         | otherwise  = (vertex, [])
-                     where appendChar str c = str ++ [c]
-                           makeItem x = Item x (dist $ splitAt middle x) (fixedDistance vertex)
-                                  where dist (prefix, []) = total_dH seqs prefix 
-                                        dist (prefix, suffix)
-                                            | level == k-1 = total_dH seqs x                                            
-                                            | otherwise = prefixDist vertex + (total_dH seqs suffix)
-                                        fixedDistance vertex
-                                            | level == middle = total_dH seqs $ k_mer vertex
-                                            | otherwise       = prefixDist vertex                               
-                           middle = k `div` 2
-                           level = length $ k_mer vertex
+                          where appendChar str c = str ++ [c]
+--                                makeUpperLevel (x:xs) = firstVertex:upperLevel seqs firstVertex xs
+--                                                        where firstVertex  = Item x dist (dist:(distances vertex))
+--                                                              dist = (total_dH seqs x)
+                                makeItem x | level < k-1 = Item x (dist x) (tail $ distances vertex)
+                                           | otherwise = Item x (total_dH seqs x) []
+                                             where dist x = (total_dH seqs x) + (head $ distances vertex)
+                                makeItem' x = Item x ((total_dH seqs x) * 2) (distances vertex)
+                                level = length $ k_mer vertex
 
 -- Find vertices with potential solution.
 availableVertices tree k | null nextToLastVertices = []
