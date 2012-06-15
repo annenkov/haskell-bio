@@ -1,0 +1,1 @@
+ghc -rtsopts -prof -auto-all -O2  -main-is MotifSearch MotifSearch.hs
