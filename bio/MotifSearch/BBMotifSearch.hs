@@ -11,9 +11,10 @@ import BruteforceMotifSearch (total_dH, dnaAlphabet)
 
 -- Branch-and-Bound median string search.
 
-data TreeItem = Item {k_mer :: String,
-                      distance :: Int}
-                deriving (Show, Eq)
+data TreeItem = Item {
+          k_mer    :: String
+        , distance :: Int
+} deriving (Show, Eq)
 
 instance Ord TreeItem where
       compare i1 i2 = compare (distance i1) (distance i2)
@@ -30,11 +31,11 @@ improve k sTree | null $ availableVertices prunedTree k  = k_mer minItem
                         prunedTree   = prune (>= minItem) sTree
                         nextVertices = availableVertices sTree k 
 
--- Generating serch tree. Node is represented as TreeItem data type.
+-- Generating search tree. Node is represented as TreeItem data type.
 searchTree seqs k = fmap f $ unfoldTree (nextLevel k) ""
                     where f x = Item x (total_dH seqs x)
 
--- Consequentially adding all character from dnaAlphabets to prefix.
+-- Consequentially adding all character from dnaAlphabet to prefix.
 nextLevel k prefix | length prefix < k      = (prefix, map (appendChar prefix) dnaAlphabet)
                    | otherwise              = (prefix, [])
                      where appendChar str c = str ++ [c]
@@ -43,7 +44,7 @@ nextLevel k prefix | length prefix < k      = (prefix, map (appendChar prefix) d
 availableVertices tree k | null nextToLastVertices = []
                          | otherwise = subForest $ head $ nextToLastVertices
                            where nextToLastVertices | null vertices  = [] 
-                                                    | otherwise      =  dropWhile (null . subForest) $ head vertices 
+                                                    | otherwise      = dropWhile (null . subForest) $ head vertices 
                                                       where vertices = drop (k-1) (levels' tree)
 
 sampleSeqs = ["TGACCGTGCCCTTGGA", "CCCTTGGAAGAAAAATGG", "AAACCTTGGACATGACT"]
