@@ -33,40 +33,34 @@ improve k sTree | null $ availableVertices prunedTree k = k_mer minItem
                         prunedTree   = prune (>= minItem) sTree
                         nextVertices = availableVertices sTree k 
 -- last $ filter ((== k) . length) $ map k_mer 
-preorderSearch seqs k = last $ filter ((== k) . length) $ map k_mer $ evalState (preorder k sTree) (maxBound :: Int)
+preorderSearch seqs k =  evalState (preorder k sTree) (maxBound :: Int)
                         where sTree = searchTree seqs k
                               lastLevel x = (length $ k_mer x) == k
 
-preorder k (Node val subForest) = do lst <- preorder' k subForest
-                                     return $ [val] ++ lst
+preorder k (Node val subForest) = do dist <- get
+                                     lst <- preorder' k subForest                                     
+                                     return $ [(val,dist)] ++ lst
 
-preorder' :: Int -> [Tree TreeItem] -> State Int [TreeItem]
+preorder' :: Int -> [Tree TreeItem] -> State Int [(TreeItem, Int)]
 preorder' k forest = do                                               
                        dist <- get
-                       if isLastLevel k forest
-                          then do
-                               let minItem = minimum $ map rootLabel forest
-                               if (distance minItem) < dist
-                                  then do put $ distance minItem
-                                          return [minItem]
-                                  else return [minItem]
-                          else do
-                               tmp <- filterM distanceLT forest
-                               lst <- mapM (preorder k) $ tmp
-                               return $ foldl' (++) [] lst
+--                       tmp <- filterM distanceLT forest
+                       lst <- mapM (newDistance k) $ filter (\x -> (distance $ rootLabel x) < dist) forest
+                       return $ foldl' (++) [] lst
             where distanceLT x = do { dist <- get; return $ distance (rootLabel x) < dist }
+                  getDist x = do {dist <- get; return (fst x, dist)}
 
 isLastLevel _ [] = False
 isLastLevel k (t:ts) = (length $ k_mer $ rootLabel t) == k
                
--- newDistance :: Int -> Tree TreeItem -> State Int [TreeItem]
--- newDistance k node@(Node (Item k_mer distance) _) = do
---                                                       dist <- get
---                                                       if length k_mer == k && distance < dist 
---                                                       then do
---                                                              put distance
---                                                              preorder k node
---                                                        else preorder k node
+newDistance :: Int -> Tree TreeItem -> State Int [(TreeItem, Int)]
+newDistance k node@(Node (Item k_mer distance) _) = do
+                                                      dist <- get
+                                                      if length k_mer == k && distance < dist 
+                                                      then do
+                                                             put distance
+                                                             preorder k node
+                                                       else preorder k node
 
 -- Generating search tree; rootLabel of Node is represented as TreeItem data type.
 searchTree seqs k = fmap f $ unfoldTree (nextLevel k) ""
