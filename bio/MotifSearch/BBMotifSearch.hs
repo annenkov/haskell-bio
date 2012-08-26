@@ -48,19 +48,20 @@ preorder' k forest = do
                        lst <- mapM (newDistance k) $ filter (\x -> (distance $ rootLabel x) < dist) forest
                        return $ foldl' (++) [] lst
             where distanceLT x = do { dist <- get; return $ distance (rootLabel x) < dist }
-                  getDist x = do {dist <- get; return (fst x, dist)}
+--                  getDist x = do {dist <- get; return (fst x, dist)}
 
 isLastLevel _ [] = False
 isLastLevel k (t:ts) = (length $ k_mer $ rootLabel t) == k
                
 newDistance :: Int -> Tree TreeItem -> State Int [(TreeItem, Int)]
-newDistance k node@(Node (Item k_mer distance) _) = do
-                                                      dist <- get
-                                                      if length k_mer == k && distance < dist 
-                                                      then do
-                                                             put distance
-                                                             preorder k node
-                                                       else preorder k node
+newDistance k node@(Node item forest) = do
+                                           dist <- get
+                                           let minItem = minimum $ map rootLabel forest
+                                           if (length $ k_mer item) == k-1 && (distance minItem) < dist
+                                               then do
+                                                   put $ distance minItem
+                                                   return [(rootLabel node, dist), (minItem, distance minItem)]
+                                               else preorder k node
 
 -- Generating search tree; rootLabel of Node is represented as TreeItem data type.
 searchTree seqs k = fmap f $ unfoldTree (nextLevel k) ""
@@ -78,7 +79,6 @@ availableVertices tree k
     where
       lastLevels = drop (k-1) (levels' tree)
       nextToLastVertices = dropWhile (null . subForest) $ head lastLevels
-                             
 
 sampleSeqs = ["TGACCGTGCCCTTGGA", "CCCTTGGAAGAAAAATGG", "AAACCTTGGACATGACT"]
 
