@@ -64,7 +64,7 @@ improve k sTree | null $ availableVertices prunedTree k  = k_mer minItem
                         nextVertices = availableVertices sTree k 
 
 -- Generating serch tree. Node is represented as TreeItem data type.
-searchTree seqs k = mapTree f $ unfoldTree (nextLevel k) B.empty
+searchTree seqs k = fmap f $ unfoldTree (nextLevel k) B.empty
                     where f x = Item x (total_dH seqs x)
 
 -- Consequentially adding all character from dnaAlphabets to prefix.
