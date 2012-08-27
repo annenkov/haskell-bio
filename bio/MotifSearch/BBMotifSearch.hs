@@ -49,12 +49,10 @@ preorder' k forest = do
                                if (distance minItem) < dist
                                   then do put $ distance minItem
                                           return [minItem]
-                                  else return [minItem]
+                                  else return []
                           else do
-                               tmp <- filterM distanceLT forest
-                               lst <- mapM (preorder k) $ tmp
+                               lst <- mapM (preorder k) $ filter (\(Node (Item _ distance) _) -> distance < dist) forest
                                return $ foldl' (++) [] lst
-            where distanceLT x = do { dist <- get; return $ distance (rootLabel x) < dist }
 
 isLastLevel _ [] = False
 isLastLevel k (t:ts) = (length $ k_mer $ rootLabel t) == k
