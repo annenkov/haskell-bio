@@ -1,4 +1,3 @@
-
 module BBMotifSearch where
 
 import Control.Monad
@@ -6,10 +5,10 @@ import Control.Monad.State
 import Data.List
 import TreeUtils
 import Data.Tree
-import System (getArgs)
+import System.Environment (getArgs)
 import Bio.Sequence.Fasta
 import Bio.Sequence.SeqData
-import BruteforceMotifSearch (total_dH, dnaAlphabet)
+import BruteforceMotifSearch (total_dH, dnaAlphabet, bruteforceMedianString)
 
 -- Branch-and-Bound median string search.
 
@@ -56,15 +55,6 @@ preorder' k forest = do
 
 isLastLevel _ [] = False
 isLastLevel k (t:ts) = (length $ k_mer $ rootLabel t) == k
-               
--- newDistance :: Int -> Tree TreeItem -> State Int [TreeItem]
--- newDistance k node@(Node (Item k_mer distance) _) = do
---                                                       dist <- get
---                                                       if length k_mer == k && distance < dist 
---                                                       then do
---                                                              put distance
---                                                              preorder k node
---                                                        else preorder k node
 
 -- Generating search tree; rootLabel of Node is represented as TreeItem data type.
 searchTree seqs k = fmap f $ unfoldTree (nextLevel k) ""
@@ -89,8 +79,10 @@ sampleSeqs = ["TGACCGTGCCCTTGGA", "CCCTTGGAAGAAAAATGG", "AAACCTTGGACATGACT"]
 main = do
     args <- getArgs
     case args of
-        [fileName, k] -> do
-           seqs <- readFasta fileName 
-           putStrLn $  bbMedianString (map (toStr . seqdata) seqs) (read k)
---           putStrLn $  preorderSearch (map (toStr . seqdata) seqs) (read k)
-        _  -> putStrLn "Wrong arguments count. Usage: MotifSearch <filename> <k-mer length>"
+        [fileName, k, alg] -> do
+           seqs <- readFasta fileName
+           case alg of
+             "bb" -> putStrLn $ bbMedianString (map (toStr . seqdata) seqs) (read k)
+             "bb-preorder" -> putStrLn $ preorderSearch (map (toStr . seqdata) seqs) (read k)
+             "bf" -> print $ bruteforceMedianString (map (toStr . seqdata) seqs) (read k)
+        _  -> putStrLn "Wrong arguments count. Usage: MotifSearch <filename> <k-mer length> <algorithm>"
