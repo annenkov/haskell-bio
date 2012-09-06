@@ -1,1 +1,1 @@
-ghc -rtsopts -prof -auto-all -O2  -main-is MotifSearch MotifSearch.hs
+ghc -rtsopts -prof -fprof-auto -O2  -main-is BBMotifSearch BBMotifSearch.hs
