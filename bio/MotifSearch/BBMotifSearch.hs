@@ -6,10 +6,10 @@ import Control.Monad.State
 import Data.List
 import TreeUtils
 import Data.Tree
-import System (getArgs)
+import System.Environment (getArgs)
 import Bio.Sequence.Fasta
 import Bio.Sequence.SeqData
-import BruteforceMotifSearch (total_dH, dnaAlphabet)
+import BruteforceMotifSearch (total_dH, dnaAlphabet, bruteforceMedianString)
 
 -- Branch-and-Bound median string search.
 
@@ -33,19 +33,19 @@ improve k sTree | null $ availableVertices prunedTree k = k_mer minItem
                         prunedTree   = prune (>= minItem) sTree
                         nextVertices = availableVertices sTree k 
 -- last $ filter ((== k) . length) $ map k_mer 
-preorderSearch seqs k =  evalState (preorder k sTree) (maxBound :: Int)
+preorderSearch seqs k = last $ filter ((== k) . length) $ map k_mer $ evalState (preorder k sTree) (maxBound :: Int)
                         where sTree = searchTree seqs k
                               lastLevel x = (length $ k_mer x) == k
 
 preorder k (Node val subForest) = do dist <- get
                                      lst <- preorder' k subForest                                     
-                                     return $ [(val,dist)] ++ lst
+                                     return $ [val] ++ lst
 
-preorder' :: Int -> [Tree TreeItem] -> State Int [(TreeItem, Int)]
+preorder' :: Int -> [Tree TreeItem] -> State Int [TreeItem]
 preorder' k forest = do                                               
                        dist <- get
---                       tmp <- filterM distanceLT forest
-                       lst <- mapM (newDistance k) $ filter (\x -> (distance $ rootLabel x) < dist) forest
+                       tmp <- filterM distanceLT forest
+                       lst <- mapM (newDistance k) tmp
                        return $ foldl' (++) [] lst
             where distanceLT x = do { dist <- get; return $ distance (rootLabel x) < dist }
 --                  getDist x = do {dist <- get; return (fst x, dist)}
@@ -53,14 +53,15 @@ preorder' k forest = do
 isLastLevel _ [] = False
 isLastLevel k (t:ts) = (length $ k_mer $ rootLabel t) == k
                
-newDistance :: Int -> Tree TreeItem -> State Int [(TreeItem, Int)]
+newDistance :: Int -> Tree TreeItem -> State Int [TreeItem]
 newDistance k node@(Node item forest) = do
                                            dist <- get
                                            let minItem = minimum $ map rootLabel forest
-                                           if (length $ k_mer item) == k-1 && (distance minItem) < dist
-                                               then do
-                                                   put $ distance minItem
-                                                   return [(rootLabel node, dist), (minItem, distance minItem)]
+                                           if (length $ k_mer item) == k-1
+                                               then 
+                                                  if (distance minItem) < dist 
+                                                  then do {put $ distance minItem; return [rootLabel node, minItem]}
+                                                  else return [minItem]
                                                else preorder k node
 
 -- Generating search tree; rootLabel of Node is represented as TreeItem data type.
@@ -87,6 +88,6 @@ main = do
     case args of
         [fileName, k] -> do
            seqs <- readFasta fileName 
-           putStrLn $  bbMedianString (map (toStr . seqdata) seqs) (read k)
---           putStrLn $  preorderSearch (map (toStr . seqdata) seqs) (read k)
+--           putStrLn $  bbMedianString (map (toStr . seqdata) seqs) (read k)
+           putStrLn $ show $ bruteforceMedianString (map (toStr . seqdata) seqs) (read k)
         _  -> putStrLn "Wrong arguments count. Usage: MotifSearch <filename> <k-mer length>"

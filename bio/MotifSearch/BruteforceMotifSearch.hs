@@ -5,10 +5,10 @@ import Data.List
 
 -- Find motifs of length k in list of DNA sequences using "brute force" algorithm.
 -- Searching for minimum total distance between sequences and all 4^k k-mers
-bruteforceMedianString seqs k = map snd $ filter minDist $ zip totalDistances words
+bruteforceMedianString seqs k = map snd $ filter (\(x,_) -> x == minDist) $ zip totalDistances words
                           where totalDistances = map (total_dH seqs) words
                                 words =  replicateM k dnaAlphabet
-                                minDist (n, _) = n == minimum totalDistances
+                                minDist = minimum totalDistances
 
 dnaAlphabet = "ACGT"
 

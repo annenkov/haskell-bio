@@ -4,7 +4,7 @@ import Control.Monad.Random
 import Test.HUnit
 import BruteforceMotifSearch (bruteforceMedianString, dnaAlphabet)
 import BBMotifSearch (bbMedianString, preorderSearch)
-import System (getArgs)
+import System.Environment (getArgs)
 
 -- Random sequences for testing --
 rndNucleotide :: Rand StdGen Char
