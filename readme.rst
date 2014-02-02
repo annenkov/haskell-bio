@@ -1,4 +1,4 @@
-Some bioinformatic algorithms in Haskell
+Some bioinformatics algorithms in Haskell
 ----------------------------------------
 
 
